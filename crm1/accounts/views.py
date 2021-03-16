@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 from django.http import HttpResponse
 from .models import *
 from .forms import OrderForm
+from .filters import OrderFilter
 
 
 def home(request):
@@ -31,7 +32,11 @@ def product(request):
 def customer(request, pk):
     customer1 = Customer.objects.get(id=pk)
     orders = customer1.order_set.all()
-    context = {'customer': customer1, 'orders': orders}
+    
+    myFilter = OrderFilter(request.GET, queryset=orders)
+    orders = myFilter.qs
+    
+    context = {'customer': customer1, 'orders': orders, "myFilter": myFilter}
     return render(request, "accounts/customer.html", context)
 
 
@@ -49,35 +54,21 @@ def createOrder(request):
 
 
 def createMultipleOrders(request, pk):
-    OrderFormSet = inlineformset_factory(Customer,Order,fields=("product", "status","note"), extra=5)
+    OrderFormSet = inlineformset_factory(Customer,
+                                         Order,
+                                         fields=("product", "status", "note"),
+                                         extra=5)
     customer1 = Customer.objects.get(id=pk)
-    formset = OrderFormSet(queryset=Order.objects.none(),instance=customer1)
+    formset = OrderFormSet(queryset=Order.objects.none(), instance=customer1)
     if request.method == 'POST':
         # print('\nPrinting POST:', request.POST)
         formset = OrderFormSet(request.POST, instance=customer1)
         if formset.is_valid():
             formset.save()
             return redirect('/')
-        
+    
     context = {'formset': formset}
-    return render(request, "accounts/order_multiple_given_customer.html", context)
-
-
-# def createOrder(request, pk):
-# 	OrderFormSet = inlineformset_factory(Customer, Order, fields=('product', 'status'), extra=10 )
-# 	customer = Customer.objects.get(id=pk)
-# 	formset = OrderFormSet(queryset=Order.objects.none(),instance=customer)
-# 	#form = OrderForm(initial={'customer':customer})
-# 	if request.method == 'POST':
-# 		#print('Printing POST:', request.POST)
-# 		#form = OrderForm(request.POST)
-# 		formset = OrderFormSet(request.POST, instance=customer)
-# 		if formset.is_valid():
-# 			formset.save()
-# 			return redirect('/')
-#
-# 	context = {'form':formset}
-# 	return render(request, 'accounts/order_form.html', context)
+    return render(request, "accounts/order_form.html", context)
 
 
 def updateOrder(request, pk):
