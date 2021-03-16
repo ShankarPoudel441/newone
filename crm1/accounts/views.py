@@ -49,18 +49,16 @@ def createOrder(request):
 
 
 def createMultipleOrders(request, pk):
-    OrderFormSet = inlineformset_factory(Customer,
-                                         Order,
-                                         fields=("product", "status"))
+    OrderFormSet = inlineformset_factory(Customer,Order,fields=("product", "status","note"), extra=5)
     customer1 = Customer.objects.get(id=pk)
-    formset = OrderFormSet(instance=customer1)
+    formset = OrderFormSet(queryset=Order.objects.none(),instance=customer1)
     if request.method == 'POST':
-        # print('Printing POST:', request.POST)
-        formset = OrderForm(request.POST)
+        # print('\nPrinting POST:', request.POST)
+        formset = OrderFormSet(request.POST, instance=customer1)
         if formset.is_valid():
             formset.save()
             return redirect('/')
-    
+        
     context = {'formset': formset}
     return render(request, "accounts/order_multiple_given_customer.html", context)
 
