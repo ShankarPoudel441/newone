@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.forms import inlineformset_factory
 from django.http import HttpResponse
 from .models import *
 from .forms import OrderForm
@@ -47,18 +48,38 @@ def createOrder(request):
     return render(request, "accounts/order_form.html", context)
 
 
-def createOrders(request, pk):
+def createMultipleOrders(request, pk):
+    OrderFormSet = inlineformset_factory(Customer,
+                                         Order,
+                                         fields=("product", "status"))
     customer1 = Customer.objects.get(id=pk)
-    form = OrderForm(initial={'customer': customer1})
+    formset = OrderFormSet(instance=customer1)
     if request.method == 'POST':
         # print('Printing POST:', request.POST)
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            form.save()
+        formset = OrderForm(request.POST)
+        if formset.is_valid():
+            formset.save()
             return redirect('/')
     
-    context = {'form': form}
-    return render(request, "accounts/order_form.html", context)
+    context = {'formset': formset}
+    return render(request, "accounts/order_multiple_given_customer.html", context)
+
+
+# def createOrder(request, pk):
+# 	OrderFormSet = inlineformset_factory(Customer, Order, fields=('product', 'status'), extra=10 )
+# 	customer = Customer.objects.get(id=pk)
+# 	formset = OrderFormSet(queryset=Order.objects.none(),instance=customer)
+# 	#form = OrderForm(initial={'customer':customer})
+# 	if request.method == 'POST':
+# 		#print('Printing POST:', request.POST)
+# 		#form = OrderForm(request.POST)
+# 		formset = OrderFormSet(request.POST, instance=customer)
+# 		if formset.is_valid():
+# 			formset.save()
+# 			return redirect('/')
+#
+# 	context = {'form':formset}
+# 	return render(request, 'accounts/order_form.html', context)
 
 
 def updateOrder(request, pk):
